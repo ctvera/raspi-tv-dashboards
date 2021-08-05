@@ -1,0 +1,162 @@
+<html>
+<body style="margin:0px;padding:0px;overflow:hidden">
+    <script type="text/javascript">
+    //<![CDATA[
+        /*
+        /home/pi/.config/lxsession/LXDE-pi/autostart  >>>
+        @chromium-browser --noerrdialogs --ignore-certificate-errors --start-fullscreen --incognito file:///home/pi/Desktop/monitoring.html
+        */
+
+        // 15 min. refresh
+        window.setTimeout(function(){window.location.href=window.location.href},900000);
+        // few sec. debugging refresh
+        // window.setTimeout(function(){window.location.href=window.location.href},50000);
+    //]]>
+    </script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+
+    <iframe id="iframe" frameborder="0" style="overflow:hidden;height:100%;width:100%;position:absolute;z-index:2"></iframe>
+    <iframe id="iframe2" frameborder="0" style="overflow:hidden;height:100%;width:100%;position:absolute;z-index:1"></iframe>
+    <iframe id="iframe3" frameborder="0" style="overflow:hidden;height:100%;width:100%;position:absolute;z-index:1"></iframe>
+    <input type="text" name="forKeyboardCatch" id="input" />
+
+    <script type="text/javascript">
+    //<![CDATA[
+        hiddenZindex = 1;
+        activeZindex = 2;
+
+        var urls = [
+            {
+                'time': 17,
+                'reload': true,
+                'css': {'transform': 'scale(1.05)', 'top': '-34px', 'left': '-22px'},
+                'url': 'https://grafana.example.cz/d/bFQtBB2iz/labrador-overview?orgId=1&from=now-6h&to=now&var-source=prometheus2&var-env=production'
+            },
+            {
+                'time': 5,
+                'reload': true,
+                'css': {'transform': 'scale(1.05)', 'top': '-34px', 'left': '-22px'},
+                'url': 'https://grafana.example.cz/d/zxmQxwHWk/labrador-users'
+            },
+            {
+                'time': 35,
+                'reload': true,
+                'css': {'transform': 'scale(1.05)', 'top': '-34px', 'left': '-22px'},
+                'url': 'https://grafana.example.cz/d/oQGmTuumk/labrador-slo?orgId=1&from=now-15m&to=now&var-slo_interval=15m&var-cluster_name=All'
+            },
+            {
+                'time': 25,
+                'reload': true,
+                'css': {'transform': 'scale(1.05)', 'top': '-34px', 'left': '-22px'},
+                'url': 'https://grafana.example.cz/d/oQGmTuumk/labrador-slo?orgId=1'
+            }
+        ];
+        var resetCss = ['transform', 'top', 'left'];
+        var index = 0;
+        var nextIndex = 0;
+        var keyboardMode = false;
+
+        var iframes = [
+            $('#iframe'),
+            $('#iframe2'),
+            $('#iframe3')
+        ];
+        var activeIframe = 0;
+
+        function setBigScreen() {
+            index = 0;
+            nextIndex = 0;
+            activeIframe = 0;
+            iframes[activeIframe][0].src = urls[index]['url'];
+            iframes[activeIframe].css("z-index", activeZindex);
+            setCss(iframes[activeIframe], urls[index]['css'])
+
+            var nextIframeIdx = activeIframe + 1;
+            while (nextIframeIdx < iframes.length) {
+                var nextFrame = iframes[nextIframeIdx];
+                setTimeout(prepareNextScreen.bind(this, nextFrame), 4000 * nextIframeIdx);
+                nextIframeIdx++;
+            }
+        }
+
+        function switchScreen() {
+            if (++index >= urls.length) index = 0;
+            if (keyboardMode) {
+                setTimeout(switchScreen, urls[index]['time'] * 1000);
+                return;
+            }
+            var hiddenFrame = iframes[activeIframe];
+
+            // show prepared screen
+            if (++activeIframe >= iframes.length) activeIframe = 0;
+            hiddenFrame.css("z-index", hiddenZindex);
+            iframes[activeIframe].css("z-index", activeZindex);
+            setTimeout(switchScreen, urls[index]['time'] * 1000);
+
+            // prepare next screen
+            setTimeout(prepareNextScreen.bind(this, hiddenFrame), 1500);
+        }
+
+        function prepareNextScreen(nextFrame) {
+            if (++nextIndex >= urls.length) nextIndex = 0;
+
+            // we have 3 URLs and 3 frames.... trying what happens when we don't set URL
+            if (nextFrame[0].src == urls[nextIndex]['url'] && !urls[nextIndex]['reload']) return;
+
+            nextFrame[0].src = urls[nextIndex]['url'];
+            setCss(nextFrame, urls[nextIndex]['css'])
+        }
+
+        function setCss(frame, css) {
+            resetCss.forEach(function(name){
+                frame.css(name, '');
+            });
+            for (var name in css) {
+                frame.css(name, css[name]);
+            }
+        }
+
+        setBigScreen();
+        setTimeout(switchScreen, urls[index]['time'] * 1000);
+
+
+        keyboardUrls = urls.slice();
+        keyboardUrls.push({'url': 'http://www.jedna-basen.cz/bistro/denni-menu/'});
+        keyboardUrls.push({'url': 'http://www.eurest-brno.cz/#restaurateka'});
+
+
+        setInterval(function() {$('#input').focus();}, 750);
+
+        var keyboardLockTimeout = null;
+        document.addEventListener('keydown', function(event) {
+            if (event.keyCode == 48) {  // "0" 
+                keyboardMode = false;
+            }
+
+            var iframe = iframes[activeIframe];
+            var url = keyboardUrls[event.keyCode - 49];
+            if (!url) {
+                return;
+            }
+
+            keyboardMode = true;
+            if (keyboardLockTimeout) {
+                clearTimeout(keyboardLockTimeout);
+            }
+            keyboardLockTimeout = setTimeout(function(){
+                keyboardMode = false;
+                keyboardLockTimeout = null;
+            }, 2 * 60 * 1000);
+
+            iframe[0].src = url['url'];
+            resetCss.forEach(function(name){
+                iframe.css(name, '');
+            });
+            for (var name in url['css']) {
+                iframe.css(name, url['css'][name]);
+            }
+        });
+    //]]>
+    </script>
+</body>
+</html>

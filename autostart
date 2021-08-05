@@ -1,0 +1,5 @@
+@xset s off
+@xset -dpms
+@xset s noblank
+@/home/pi/cec_starter.sh
+@chromium-browser --noerrdialogs --ignore-certificate-errors --start-fullscreen --incognito file:///home/pi/Desktop/monitoring.html
